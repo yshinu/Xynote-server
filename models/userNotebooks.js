@@ -19,4 +19,5 @@ const userBooksSchema = new mongoose.Schema({
 });
 
 // 创建模型
-const UserNoteBooksModel = mongoose.model('UserBooklist', userSchema);
+ const UserNoteBooksModel = mongoose.model('UserBooklist', userBooksSchema);
+module.exports = UserNoteBooksModel
