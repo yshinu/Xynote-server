@@ -6,7 +6,6 @@ const jwt = require('jsonwebtoken');
 const { secret } = require('../configs/config')
 //导入 用户的模型
 const BookListModel = require('../models/userNotebooks');
-
 const md5 = require('md5');
 
 router.get('/booklist', (req, res) => {
@@ -34,8 +33,8 @@ router.get('/booklist', (req, res) => {
                             {
                                 name: '默认笔记本',
                                 content: [{
-                                    title: '',
-                                    text: ''
+                                    title: '默认标题',
+                                    text: '默认内容'
                                 }]
                             }
                         ]
@@ -97,7 +96,7 @@ router.delete('/booklist', (req, res) => {
 })
 router.put('/booklist', (req, res) => {
     const token = req.headers.yshinu
-    const {modifyId,modifyName} = req.body
+    const { modifyId, modifyName } = req.body
     jwt.verify(token, secret, (err, data) => {
         if (err) {
             res.json({
@@ -107,7 +106,7 @@ router.put('/booklist', (req, res) => {
         }
         if (modifyId) {
             BookListModel.updateOne(
-                { email: data.email,"notebooks._id": modifyId },
+                { email: data.email, "notebooks._id": modifyId },
                 { $set: { "notebooks.$.name": modifyName } },
             ).then(() => res.json({
                 code: '0000',
@@ -118,4 +117,152 @@ router.put('/booklist', (req, res) => {
 
     })
 })
+router.get('/notebookdetail', (req, res) => {
+    const token = req.headers.yshinu
+    const { bookDetailId } = req.query
+    console.log(bookDetailId)
+    jwt.verify(token, secret, (err, data) => {
+        {
+            if (err) {
+                res.json({
+                    code: '3001',
+                    msg: '无法识别当前用户'
+                })
+                return
+            }
+            BookListModel.findOne({ email: data.email, "notebooks._id": bookDetailId}, { "notebooks.$": 1 }).then(result => {
+                const contents = result?.notebooks[0].content;
+                const titlesAndTexts = contents.map(content => ({ title: content.title, text: 'defult' ,id:content._id}));
+                res.json({
+                    code:'0000',
+                    msg:'获取成功',
+                    content:titlesAndTexts
+                })
+            }).catch(err=>res.json({
+                msg:'你在干嘛？'
+            }))
+        }
+    })
+})
+router.put('/notebookdetail', (req, res) => {
+    const token = req.headers.yshinu
+    const { noteId, newName } = req.body
+    jwt.verify(token, secret, (err, data) => {
+        if (err) {
+            res.json({
+                code: '3001',
+                msg: '无法识别当前用户'
+            })
+           return 
+        }
+        if (noteId) {
+            console.log(noteId)
+            BookListModel.findOne({email:data.email}).then(
+                (user)=>{
+                    const notebook = user.notebooks.find(item=>item._id.toString()===noteId)
+                    notebook.content.push({
+                        title: newName,
+                        text: ' '
+                      });
+                      user.save().then(()=>{
+                        res.json({
+                            code:'0000',
+                            msg:'创建成功'
+                        })
+                      })
+                }
+            )
+            return
+        }
+
+    })
+})
+router.put('/content',(req,res)=>{
+    const token = req.headers.yshinu
+    const { noteBookId,noteId,text } = req.body
+    console.log(noteBookId,'!!!!!!!!!!!!!!!!!',noteId,text )
+    jwt.verify(token, secret, (err, data) => {
+        {
+            if (err) {
+                res.json({
+                    code: '3001',
+                    msg: '无法识别当前用户'
+                })
+                return
+            }
+            BookListModel.findOneAndUpdate(
+            { email: data.email, "notebooks._id": noteBookId, "notebooks.content._id":noteId},
+            { $set: {  'notebooks.$[notebook].content.$[content].text': text } },
+            { arrayFilters: [{ 'notebook._id': noteBookId }, { 'content._id': noteId }] },
+
+            ).then(updatetext => {
+                res.json({
+                    code:'0000',
+                    msg:'提交成功'
+                })
+            }).catch(err=>console.log('err',err))
+        }
+    })
+})
+router.get('/content',(req,res)=>{
+    const token = req.headers.yshinu
+    const { noteBookId,noteId } = req.query
+    console.log(noteBookId,'!!!!!!!!!!!!!!!!!',noteId )
+    jwt.verify(token, secret, (err, data) => {
+        {
+            if (err) {
+                res.json({
+                    code: '3001',
+                    msg: '无法识别当前用户'
+                })
+                return
+            }
+            BookListModel.findOne({ email: data.email, "notebooks._id": noteBookId}, { "notebooks.$": 1 }).then(userBooks => {
+                const notebook = userBooks.notebooks[0];
+                const content = notebook.content.id(noteId);
+                const title = content.title;
+                const text = content.text;
+                res.json({
+                    code:'0000',
+                    msg:'获取成功',
+                    "content":text
+                })
+            }).catch(err=>res.json({
+                msg:'你在干嘛？'
+            }))
+            
+        }
+    })
+})
+router.delete('/content',(req,res)=>{
+    const token = req.headers.yshinu
+    const { noteBookId,noteId,text } = req.body
+    console.log(noteBookId,'!!!!!!!!!!!!!!!!!',noteId,text )
+    jwt.verify(token, secret, (err, data) => {
+        {
+            if (err) {
+                res.json({
+                    code: '3001',
+                    msg: '无法识别当前用户'
+                })
+                return
+            }
+            BookListModel.findOneAndUpdate(
+                { email: data.email, 'notebooks._id': noteBookId },
+                { $pull: { 'notebooks.$[notebook].content': { _id: noteId } } },
+                { arrayFilters: [{ 'notebook._id': noteBookId }] }
+              ).then(deletedNote => {
+                if (deletedNote) {
+                 res.json({
+                    code:"0000",
+                    msg:'删除成功'
+                 });
+                } else {
+                  console.log('找不到指定的笔记内容');
+                }
+              }).catch(err => console.log('删除笔记内容失败', err));   
+        }
+    })
+})
 module.exports = router
+
