@@ -9,7 +9,7 @@ var usersRouter = require('./routes/users');
 const apiRouterReg = require('./api/reg')
 const apiRouterLogin = require('./api/login')
 const apiBookList = require('./api/booklist')
-
+const vip = require('./api/vipList')
 var app = express();
 
 // view engine setup
@@ -24,7 +24,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-app.use('/api',crossa, [apiRouterReg,apiRouterLogin,apiBookList]);
+app.use('/api',crossa, [apiRouterReg,apiRouterLogin,apiBookList,vip]);
 
 
 // catch 404 and forward to error handler

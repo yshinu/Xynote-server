@@ -25,7 +25,7 @@ router.use(allo).post('/reg', (req, res) => {
         const token = jwt.sign({ email, pass }, secret, {
           expiresIn: 60 * 60 * 24 * 7
         });
-        UserModel.create({email,pass:md5(pass)})
+        UserModel.create({email,pass:md5(pass),isVip:false})
         res.json({
           code: '0000',
           msg: '成功',
