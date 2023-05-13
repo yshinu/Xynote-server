@@ -64,7 +64,7 @@ router.get('/vip/vali', (req, res) => {
             } else {
                 res.json({
                     code: "0000",
-                    msg: '获取成功',
+                    msg: '获取成功！若未收到邮件，请不要使用临时邮箱进行注册.',
                 })
             }
         });
