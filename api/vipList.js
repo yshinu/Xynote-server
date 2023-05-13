@@ -24,7 +24,7 @@ router.get('/vip', (req, res) => {
             return
         }
         UserModel.findOne({ email: data.email }, 'isVip').then(user => {
-            if(user. user.isVip){
+            if(user.isVip){
                 res.json({
                     code: '0000',
                     msg: '查询成功',
@@ -34,7 +34,7 @@ router.get('/vip', (req, res) => {
                 res.json({
                     code: '0000',
                     msg: '查询成功',
-                    isVip: 'false'
+                    isVip: false
                 })
             }
            
@@ -139,7 +139,10 @@ router.get('/vipbooks', (req, res) => {
                 msg: '获取列表成功',
                 list: result
             })
-        }).catch(err => console.log(err))
+        }).catch(err => res.json({
+            code:'5005',
+            msg:'您还没有笔记呢'
+        }))
     })
 })
 router.get('/vipbook/content', (req, res) => {
@@ -193,14 +196,19 @@ router.patch('/vipbooks', (req, res) => {
         VipBookList.findOneAndUpdate(
             { email: data.email },
             { $push: { books: book } },
-            { new: true },).then((res)=>{
-                console.log(res)
-            }).then(()=>{
+            { new: true }
+        ).then((doc) => {
+            if (doc) {
+                // 更新成功
                 res.json({
-                    code:'0000',
-                    msg:'删除成功'
-                })
-            })
+                    code: '0000',
+                    msg: '创建成功'
+                });
+            } else {
+                // 更新失败，执行创建新文档的操作
+                return VipBookList.create({ email: data.email, books: [book] });
+            }
+        })   
     })
 })
 router.delete('/vipbooks', (req, res) => {
