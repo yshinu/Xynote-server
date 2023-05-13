@@ -24,11 +24,20 @@ router.get('/vip', (req, res) => {
             return
         }
         UserModel.findOne({ email: data.email }, 'isVip').then(user => {
-            res.json({
-                code: '0000',
-                msg: '查询成功',
-                isVip: user.isVip
-            })
+            if(user. user.isVip){
+                res.json({
+                    code: '0000',
+                    msg: '查询成功',
+                    isVip: user.isVip
+                })
+            }else{
+                res.json({
+                    code: '0000',
+                    msg: '查询成功',
+                    isVip: 'false'
+                })
+            }
+           
         }
         )
     })
